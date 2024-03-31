@@ -1,5 +1,5 @@
 "use client"
-import { useState, useRef, MouseEvent, ChangeEvent } from 'react';
+import { useState, useRef, MouseEvent, ChangeEvent, useEffect } from 'react';
 
 const SignatureCanvas = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -9,6 +9,20 @@ const SignatureCanvas = () => {
   const [backgroundColor, setBackgroundColor] = useState<string>('#ffffff'); // Default white background
   const [error, setError] = useState<string>(''); // Error message
   const [message, setMessage] = useState<string>(''); // Message for the signature download
+
+  useEffect(() => {
+    const resizeCanvas = () => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      canvas.width = window.innerWidth * 0.8; // Adjust canvas width
+      canvas.height = window.innerHeight * 0.6; // Adjust canvas height
+    };
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas(); // Call once to set initial canvas size
+    return () => {
+      window.removeEventListener('resize', resizeCanvas);
+    };
+  }, []);
 
   const startDrawing = (e: MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
@@ -90,8 +104,6 @@ const SignatureCanvas = () => {
             onMouseDown={startDrawing}
             onMouseUp={endDrawing}
             onMouseMove={draw}
-            width={600}
-            height={400}
             style={{ border: '2px solid black', backgroundColor }}
           />
         </div>
