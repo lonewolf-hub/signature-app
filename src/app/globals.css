@@ -1,3 +1,27 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+
+html {
+    --scroll-behavior: smooth!important;
+    scroll-behavior: smooth!important;
+    }
+  ::-webkit-scrollbar {
+    width: 10px; /* Width of the scrollbar */
+  }
+  
+  ::-webkit-scrollbar-track {
+    background: #a7eaf5; /* Track color */
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background: #a7eaf5; /* Thumb color */
+    border-radius: 5px; /* Border radius of the thumb */
+    border: 2px solid #7BD3EA; /* Border color of the thumb */
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    background: #35d0e8; /* Thumb color on hover */
+  }
+  

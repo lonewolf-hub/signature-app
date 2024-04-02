@@ -1,21 +1,23 @@
 "use client"
-import { useState, useRef, MouseEvent, ChangeEvent, useEffect } from 'react';
+import React, { useState, useRef, MouseEvent, ChangeEvent, useEffect } from 'react';
+import toast, { useToaster } from 'react-hot-toast';
+import ColorPicker from '../color_picker/ColorPicker';
 
 const SignatureCanvas = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState<boolean>(false);
   const [strokeColor, setStrokeColor] = useState<string>('#000000'); // Default black color
-  const [strokeWidth, setStrokeWidth] = useState<number>(2); // Default stroke width
+  const [strokeWidth, setStrokeWidth] = useState<number>(4); // Default stroke width
   const [backgroundColor, setBackgroundColor] = useState<string>('#ffffff'); // Default white background
   const [error, setError] = useState<string>(''); // Error message
-  const [message, setMessage] = useState<string>(''); // Message for the signature download
+  const toaster = useToaster(); // Using react-hot-toast
 
   useEffect(() => {
     const resizeCanvas = () => {
       const canvas = canvasRef.current;
       if (!canvas) return;
-      canvas.width = window.innerWidth * 0.8; // Adjust canvas width
-      canvas.height = window.innerHeight * 0.6; // Adjust canvas height
+      canvas.width = window.innerWidth * 0.92; // Adjust canvas width
+      canvas.height = window.innerHeight * 0.7; // Adjust canvas height
     };
     window.addEventListener('resize', resizeCanvas);
     resizeCanvas(); // Call once to set initial canvas size
@@ -57,7 +59,7 @@ const SignatureCanvas = () => {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    setMessage('Signature cleared successfully!');
+    toast.success('Canvas cleared successfully!'); // Toast message for clearing canvas
     setError(''); // Reset error message when clearing signature
   };
 
@@ -74,15 +76,14 @@ const SignatureCanvas = () => {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      setMessage('Signature downloaded successfully!');
-      setTimeout(() => setMessage(''), 3000); // Clear message after 3 seconds
+      toast.success('Signature downloaded successfully!'); // Toast message for downloading signature
     } else {
       setError('Please sign first to download.');
     }
   };
 
-  const handleColorChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setStrokeColor(e.target.value);
+  const handleColorChange = (color: string) => {
+    setStrokeColor(color);
   };
 
   const handleWidthChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -94,43 +95,37 @@ const SignatureCanvas = () => {
   };
 
   return (
-    <div className='flex justify-center mt-10'>
+    <div className='flex justify-center pt-10 min-h-screen'>
       <div className='flex flex-col items-center'>
         {error && <p className="text-red-500">{error}</p>}
-        {message && <p className="text-green-500">{message}</p>}
         <div className=''>
           <canvas
             ref={canvasRef}
             onMouseDown={startDrawing}
             onMouseUp={endDrawing}
             onMouseMove={draw}
-            style={{ border: '2px solid black', backgroundColor }}
+            style={{  backgroundColor }}
+            className='shadow-lg'
           />
         </div>
-        <input
-          type='color'
-          value={backgroundColor}
-          onChange={handleBackgroundColorChange}
-          className='mt-3'
-        />
         <div className='flex flex-col gap-2 mt-3'>
-          <input
-            type='color'
-            value={strokeColor}
-            onChange={handleColorChange}
-            className='mb-2'
-          />
-          <input
-            type='range'
-            min='1'
-            max='10'
-            value={strokeWidth}
-            onChange={handleWidthChange}
-            className='mb-2'
-          />
+          <div className='flex justify-between my-2'>
+            <ColorPicker
+              color={strokeColor}
+              onChange={handleColorChange}
+            />
+            <input
+              type='range'
+              min='1'
+              max='80'
+              value={strokeWidth}
+              onChange={handleWidthChange}
+              className='mb-2'
+            />
+          </div>
           <div className='flex gap-4'>
-            <button onClick={clearCanvas} className='bg-red-600 py-2 px-4 font-bold text-white rounded-md'>Clear Signature</button>
-            <button onClick={downloadSignature} className='bg-purple-600 py-2 px-4 font-bold text-white rounded-md'>Download Signature</button>
+            <button onClick={clearCanvas} className='bg-[#f14b43] py-2 px-4 font-bold text-white rounded-md'>Clear Canvas</button>
+            <button onClick={downloadSignature} className='bg-[#298829] py-2 px-4 font-bold text-white rounded-md'>Download Signature</button>
           </div>
         </div>
       </div>
