@@ -22,15 +22,15 @@ const ColorPicker: React.FC<ColorPickerProps> = ({ color, onChange }) => {
   };
 
   return (
-    <div>
+    <div className='border-4 border-black p-[3px] '>
       <div
         onClick={handleClick}
         style={{
-          width: '36px',
-          height: '36px',
-          borderRadius: '2px',
+          width: '30px',
+          height: '30px',
           background: color,
         }}
+        className='shadow-md'
       />
       {displayColorPicker ? (
         <div

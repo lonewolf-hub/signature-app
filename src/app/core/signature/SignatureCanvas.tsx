@@ -1,26 +1,28 @@
 "use client"
 import React, { useState, useRef, MouseEvent, ChangeEvent, useEffect } from 'react';
-import toast, { useToaster } from 'react-hot-toast';
+import toast from 'react-hot-toast';
+import { FaUndo, FaRedo } from 'react-icons/fa';
 import ColorPicker from '../color_picker/ColorPicker';
 
 const SignatureCanvas = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState<boolean>(false);
-  const [strokeColor, setStrokeColor] = useState<string>('#000000'); // Default black color
-  const [strokeWidth, setStrokeWidth] = useState<number>(4); // Default stroke width
-  const [backgroundColor, setBackgroundColor] = useState<string>('#ffffff'); // Default white background
-  const [error, setError] = useState<string>(''); // Error message
-  const toaster = useToaster(); // Using react-hot-toast
+  const [strokeColor, setStrokeColor] = useState<string>('#000000');
+  const [strokeWidth, setStrokeWidth] = useState<number>(4);
+  const [backgroundColor, setBackgroundColor] = useState<string>('#ffffff');
+  const [error, setError] = useState<string>('');
+  const [undoHistory, setUndoHistory] = useState<{ dataURL: string }[]>([]);
+  const [redoHistory, setRedoHistory] = useState<{ dataURL: string }[]>([]);
 
   useEffect(() => {
     const resizeCanvas = () => {
       const canvas = canvasRef.current;
       if (!canvas) return;
-      canvas.width = window.innerWidth * 0.92; // Adjust canvas width
-      canvas.height = window.innerHeight * 0.7; // Adjust canvas height
+      canvas.width = window.innerWidth * 0.92;
+      canvas.height = window.innerHeight * 0.7;
     };
     window.addEventListener('resize', resizeCanvas);
-    resizeCanvas(); // Call once to set initial canvas size
+    resizeCanvas();
     return () => {
       window.removeEventListener('resize', resizeCanvas);
     };
@@ -34,13 +36,18 @@ const SignatureCanvas = () => {
     if (!ctx) return;
     ctx.beginPath();
     ctx.moveTo(e.clientX - canvas.offsetLeft, e.clientY - canvas.offsetTop);
-    ctx.strokeStyle = strokeColor; // Set stroke color
-    ctx.lineWidth = strokeWidth; // Set stroke width
-    setError(''); // Reset error message when starting drawing
+    ctx.strokeStyle = strokeColor;
+    ctx.lineWidth = strokeWidth;
+    setError('');
   };
 
   const endDrawing = () => {
     setIsDrawing(false);
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const dataURL = canvas.toDataURL();
+    setUndoHistory(prevHistory => [...prevHistory, { dataURL }]);
+    setRedoHistory([]);
   };
 
   const draw = (e: MouseEvent<HTMLCanvasElement>) => {
@@ -53,14 +60,45 @@ const SignatureCanvas = () => {
     ctx.stroke();
   };
 
+  const undo = () => {
+    if (undoHistory.length === 0) return;
+    const lastDrawing = undoHistory.pop();
+    if (!lastDrawing) return;
+    setRedoHistory(prevHistory => [...prevHistory, lastDrawing]);
+    redrawCanvas();
+    toast.success('Undo successful');
+  };
+
+  const redo = () => {
+    if (redoHistory.length === 0) return;
+    const nextDrawing = redoHistory.pop();
+    if (!nextDrawing) return;
+    setUndoHistory(prevHistory => [...prevHistory, nextDrawing]);
+    redrawCanvas();
+    toast.success('Redo successful');
+  };
+
+  const redrawCanvas = () => {
+    const canvas = canvasRef.current;
+    if (!canvas || undoHistory.length === 0) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const img = new Image();
+    img.src = undoHistory[undoHistory.length - 1].dataURL;
+    img.onload = () => {
+      ctx.drawImage(img, 0, 0);
+    };
+  };
+  
   const clearCanvas = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    toast.success('Canvas cleared successfully!'); // Toast message for clearing canvas
-    setError(''); // Reset error message when clearing signature
+    toast.success('Canvas cleared successfully!');
+    setError('');
   };
 
   const downloadSignature = () => {
@@ -76,9 +114,9 @@ const SignatureCanvas = () => {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      toast.success('Signature downloaded successfully!'); // Toast message for downloading signature
+      toast.success('Signature downloaded successfully!');
     } else {
-      setError('Please sign first to download.');
+      toast.error('Please draw something first!');
     }
   };
 
@@ -97,18 +135,17 @@ const SignatureCanvas = () => {
   return (
     <div className='flex justify-center pt-10 min-h-screen'>
       <div className='flex flex-col items-center'>
-        {error && <p className="text-red-500">{error}</p>}
         <div className=''>
           <canvas
             ref={canvasRef}
             onMouseDown={startDrawing}
             onMouseUp={endDrawing}
             onMouseMove={draw}
-            style={{  backgroundColor }}
+            style={{ backgroundColor }}
             className='shadow-lg'
           />
         </div>
-        <div className='flex flex-col gap-2 mt-3'>
+        <div className='flex flex-col gap-4 mt-5'>
           <div className='flex justify-between my-2'>
             <ColorPicker
               color={strokeColor}
@@ -120,12 +157,17 @@ const SignatureCanvas = () => {
               max='80'
               value={strokeWidth}
               onChange={handleWidthChange}
-              className='mb-2'
             />
+            <button onClick={undo} className='bg-black py-[6px] px-[14px] font-bold text-white rounded-full hover:bg-[#1a1818] transition duration-300 ease-in-out'>
+              <FaUndo />
+            </button>
+            <button onClick={redo} className='bg-black py-[6px] px-[14px] font-bold text-white rounded-full hover:bg-[#1a1818] transition duration-300 ease-in-out'>
+              <FaRedo />
+            </button>
           </div>
-          <div className='flex gap-4'>
-            <button onClick={clearCanvas} className='bg-[#f14b43] py-2 px-4 font-bold text-white rounded-md'>Clear Canvas</button>
-            <button onClick={downloadSignature} className='bg-[#298829] py-2 px-4 font-bold text-white rounded-md'>Download Signature</button>
+          <div className='flex gap-6'>
+            <button onClick={clearCanvas} className='bg-[#f14343] py-2 px-4 font-semibold text-white rounded hover:bg-[#ee5f5f] transition duration-300 ease-in-out'>Clear Canvas</button>
+            <button onClick={downloadSignature} className='bg-[#475cfa] py-2 px-4 font-semibold text-white rounded hover:bg-[#5a9cdf] transition duration-300 ease-in-out'>Download Canvas</button>
           </div>
         </div>
       </div>
