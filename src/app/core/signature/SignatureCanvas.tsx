@@ -1,7 +1,7 @@
 "use client"
 import React, { useState, useRef, useEffect, ChangeEvent } from 'react';
 import toast from 'react-hot-toast';
-import { FaUndo, FaRedo, FaSprayCan, FaCircle, FaPaintBrush, FaSquare, FaShapes, FaRing } from 'react-icons/fa';
+import { FaUndo, FaRedo, FaSprayCan, FaCircle, FaPaintBrush, FaSquare, FaShapes, FaRing, FaEraser } from 'react-icons/fa';
 import ColorPicker from '../color_picker/ColorPicker';
 
 type SelectedShape = 'brush' | 'spray' | 'dotted' | 'circle' | 'square' | 'rectangle';
@@ -15,13 +15,14 @@ const SignatureCanvas = () => {
   const [undoHistory, setUndoHistory] = useState<{ dataURL: string }[]>([]);
   const [redoHistory, setRedoHistory] = useState<{ dataURL: string }[]>([]);
   const [selectedShape, setSelectedShape] = useState<SelectedShape>('brush');
+  const [isEraserActive, setIsEraserActive] = useState<boolean>(false);
 
   useEffect(() => {
     const resizeCanvas = () => {
       const canvas = canvasRef.current;
       if (!canvas) return;
       canvas.width = window.innerWidth * 0.92;
-      canvas.height = window.innerHeight * 0.7;
+      canvas.height = window.innerHeight * 0.76;
     };
     window.addEventListener('resize', resizeCanvas);
     resizeCanvas();
@@ -45,7 +46,7 @@ const SignatureCanvas = () => {
       ctx.beginPath();
       ctx.moveTo(e.clientX - canvas.offsetLeft, e.clientY - canvas.offsetTop);
     }
-    ctx.strokeStyle = strokeColor;
+    ctx.strokeStyle = isEraserActive ? backgroundColor : strokeColor;
     ctx.lineWidth = strokeWidth;
   };
 
@@ -65,6 +66,8 @@ const SignatureCanvas = () => {
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
+    ctx.strokeStyle = isEraserActive ? backgroundColor : strokeColor;
+    ctx.lineWidth = strokeWidth;
     if ('touches' in e) {
       const touch = e.touches[0];
       switch (selectedShape) {
@@ -76,6 +79,12 @@ const SignatureCanvas = () => {
           break;
         case 'rectangle':
           drawRectangle(ctx, touch.clientX - canvas.offsetLeft, touch.clientY - canvas.offsetTop);
+          break;
+        case 'spray':
+          spray(ctx, touch.clientX - canvas.offsetLeft, touch.clientY - canvas.offsetTop);
+          break;
+        case 'dotted':
+          dotted(ctx, touch.clientX - canvas.offsetLeft, touch.clientY - canvas.offsetTop);
           break;
         default:
           ctx.lineTo(touch.clientX - canvas.offsetLeft, touch.clientY - canvas.offsetTop);
@@ -92,6 +101,12 @@ const SignatureCanvas = () => {
           break;
         case 'rectangle':
           drawRectangle(ctx, e.clientX - canvas.offsetLeft, e.clientY - canvas.offsetTop);
+          break;
+        case 'spray':
+          spray(ctx, e.clientX - canvas.offsetLeft, e.clientY - canvas.offsetTop);
+          break;
+        case 'dotted':
+          dotted(ctx, e.clientX - canvas.offsetLeft, e.clientY - canvas.offsetTop);
           break;
         default:
           ctx.lineTo(e.clientX - canvas.offsetLeft, e.clientY - canvas.offsetTop);
@@ -113,6 +128,29 @@ const SignatureCanvas = () => {
 
   const drawRectangle = (ctx: CanvasRenderingContext2D, x: number, y: number) => {
     ctx.strokeRect(x - 75, y - 50, 150, 100);
+  };
+
+  const spray = (ctx: CanvasRenderingContext2D, x: number, y: number) => {
+    ctx.fillStyle = isEraserActive ? backgroundColor : strokeColor; // Set fill style
+    ctx.beginPath();
+    for (let i = 0; i < 20; i++) {
+      const radius = Math.random() * 20;
+      const angle = Math.random() * 2 * Math.PI;
+      const xOffset = radius * Math.cos(angle);
+      const yOffset = radius * Math.sin(angle);
+      ctx.fillRect(x + xOffset, y + yOffset, strokeWidth, strokeWidth); // Use strokeWidth for width and height
+    }
+  };
+  
+  const dotted = (ctx: CanvasRenderingContext2D, x: number, y: number) => {
+    ctx.fillStyle = isEraserActive ? backgroundColor : strokeColor; // Set fill style
+    ctx.beginPath();
+    ctx.arc(x, y, strokeWidth / 2, 0, 2 * Math.PI); // Use strokeWidth / 2 as radius
+    ctx.fill();
+  };
+
+  const toggleEraser = () => {
+    setIsEraserActive(prevState => !prevState);
   };
 
   const undo = () => {
@@ -187,7 +225,7 @@ const SignatureCanvas = () => {
   };
 
   return (
-    <div className='flex justify-center pt-10 min-h-screen'>
+    <div className='flex justify-center pt-9 min-h-screen'>
       <div className='flex flex-col items-center'>
         <div className=''>
           <canvas
@@ -204,6 +242,10 @@ const SignatureCanvas = () => {
         </div>
         <div className='flex flex-col gap-4 mt-5'>
           <div className='flex justify-between'>
+            {/* Add eraser icon */}
+            <button onClick={toggleEraser} className={`bg-black py-[6px] px-[14px] font-bold text-white rounded-full ${isEraserActive ? 'bg-gray-700' : 'hover:bg-gray-700'}`}>
+              <FaEraser />
+            </button>
             <ColorPicker
               color={strokeColor}
               onChange={handleColorChange}
@@ -211,11 +253,11 @@ const SignatureCanvas = () => {
             <input
               type='range'
               min='1'
-              max='80'
+              max='70'
               value={strokeWidth}
               onChange={handleWidthChange}
             />
-            <button onClick={() => handleShapeChange('brush')} className={`hidden md:inline-block bg-black py-[6px] px-[14px] font-bold text-white rounded-full ${selectedShape === 'brush' ? 'bg-gray-700' : 'hover:bg-gray-700'}`}>
+           <button onClick={() => handleShapeChange('brush')} className={`hidden md:inline-block bg-black py-[6px] px-[14px] font-bold text-white rounded-full ${selectedShape === 'brush' ? 'bg-gray-700' : 'hover:bg-gray-700'}`}>
               <FaPaintBrush />
             </button>
             <button onClick={() => handleShapeChange('spray')} className={`hidden md:inline-block bg-black py-[6px] px-[14px] font-bold text-white rounded-full ${selectedShape === 'spray' ? 'bg-gray-700' : 'hover:bg-gray-700'}`}>
