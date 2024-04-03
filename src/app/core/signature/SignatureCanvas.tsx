@@ -182,17 +182,18 @@ const SignatureCanvas = () => {
     <div className='flex justify-center pt-10 min-h-screen'>
       <div className='flex flex-col items-center'>
         <div className=''>
-          <canvas
-            ref={canvasRef}
-            onMouseDown={startDrawing}
-            onMouseUp={endDrawing}
-            onMouseMove={draw}
-            onTouchStart={startDrawing}
-            onTouchEnd={endDrawing}
-            onTouchMove={draw}
-            style={{ backgroundColor }}
-            className='shadow-lg'
-          />
+        <canvas
+  ref={canvasRef}
+  onMouseDown={startDrawing}
+  onMouseUp={endDrawing}
+  onMouseMove={draw}
+  onTouchStart={startDrawing}
+  onTouchEnd={endDrawing}
+  onTouchMove={draw}
+  style={{ backgroundColor, touchAction: 'none' }} // Add touchAction property
+  className='shadow-lg'
+/>
+
         </div>
         <div className='flex flex-col gap-4 mt-5'>
           <div className='flex justify-between my-2'>
@@ -207,13 +208,14 @@ const SignatureCanvas = () => {
               value={strokeWidth}
               onChange={handleWidthChange}
             />
-            <button onClick={() => handleBrushTypeChange('brush')} className={`bg-black py-[6px] px-[14px] font-bold text-white rounded-full ${brushType === 'brush' ? 'bg-gray-700' : 'hover:bg-gray-700'}`}>
-              <FaPaintBrush />
-            </button>
-            <button onClick={() => handleBrushTypeChange('spray')} className={`bg-black py-[6px] px-[14px] font-bold text-white rounded-full ${brushType === 'spray' ? 'bg-gray-700' : 'hover:bg-gray-700'}`}>
+           <button onClick={() => handleBrushTypeChange('brush')} className={`hidden sm:inline-block bg-black py-[6px] px-[14px] font-bold text-white rounded-full ${brushType === 'brush' ? 'bg-gray-700' : 'hover:bg-gray-700'}`}>
+  <FaPaintBrush />
+</button>
+
+            <button onClick={() => handleBrushTypeChange('spray')} className={`hidden sm:inline-block bg-black py-[6px] px-[14px] font-bold text-white rounded-full ${brushType === 'spray' ? 'bg-gray-700' : 'hover:bg-gray-700'}`}>
               <FaSprayCan />
             </button>
-            <button onClick={() => handleBrushTypeChange('dotted')} className={`bg-black py-[6px] px-[14px] font-bold text-white rounded-full ${brushType === 'dotted' ? 'bg-gray-700' : 'hover:bg-gray-700'}`}>
+            <button onClick={() => handleBrushTypeChange('dotted')} className={`hidden sm:inline-block bg-black py-[6px] px-[14px] font-bold text-white rounded-full ${brushType === 'dotted' ? 'bg-gray-700' : 'hover:bg-gray-700'}`}>
               <FaCircle />
             </button>
 
@@ -224,18 +226,19 @@ const SignatureCanvas = () => {
               <FaRedo />
             </button>
           </div>
-          <div className='flex justify-between'>
-            {/* <button onClick={() => handleBrushTypeChange('brush')} className={`bg-black py-[6px] px-[14px] font-bold text-white  ${brushType === 'brush' ? 'bg-gray-700' : 'hover:bg-gray-700'}`}>
-              Brush
+          <div className='flex justify-between my-1'>
+          <button onClick={() => handleBrushTypeChange('brush')} className={`md:hidden inline-block bg-black py-[6px] px-[14px] font-bold text-white rounded-full ${brushType === 'brush' ? 'bg-gray-700' : 'hover:bg-gray-700'}`}>
+  <FaPaintBrush />
+</button>
+
+            <button onClick={() => handleBrushTypeChange('spray')} className={`md:hidden inline-block bg-black py-[6px] px-[14px] font-bold text-white rounded-full ${brushType === 'spray' ? 'bg-gray-700' : 'hover:bg-gray-700'}`}>
+              <FaSprayCan />
             </button>
-            <button onClick={() => handleBrushTypeChange('spray')} className={`bg-black py-[6px] px-[14px] font-bold text-white  ${brushType === 'spray' ? 'bg-gray-700' : 'hover:bg-gray-700'}`}>
-              Spray
+            <button onClick={() => handleBrushTypeChange('dotted')} className={`md:hidden inline-block bg-black py-[6px] px-[14px] font-bold text-white rounded-full ${brushType === 'dotted' ? 'bg-gray-700' : 'hover:bg-gray-700'}`}>
+              <FaCircle />
             </button>
-            <button onClick={() => handleBrushTypeChange('dotted')} className={`bg-black py-[6px] px-[14px] font-bold text-white  ${brushType === 'dotted' ? 'bg-gray-700' : 'hover:bg-gray-700'}`}>
-              Dotted
-            </button> */}
           </div>
-          <div className='flex gap-32'>
+          <div className='flex md:gap-32 gap-20'>
             <button onClick={clearCanvas} className='bg-[#f14343] py-2 px-4 font-semibold text-white hover:bg-[#ee5f5f] shadow-md'>Clear Canvas</button>
             <button onClick={downloadSignature} className='bg-[#475cfa] py-2 px-4 font-semibold text-white hover:bg-[#5a9cdf] shadow-md'>Download Canvas</button>
           </div>
