@@ -24,4 +24,15 @@ html {
   ::-webkit-scrollbar-thumb:hover {
     background: #35d0e8; /* Thumb color on hover */
   }
+  .action-button {
+   
+    transition: all 0.3s ease-in-out;
+  }
+  .action-button:hover {
+    transform: scale(1.05);
+    cursor: pointer;
+  }
   
+  .action-button:focus {
+    outline: none;
+  }

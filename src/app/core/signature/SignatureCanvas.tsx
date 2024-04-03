@@ -1,5 +1,5 @@
 "use client"
-import React, { useState, useRef, MouseEvent, ChangeEvent, useEffect } from 'react';
+import React, { useState, useRef, useEffect, ChangeEvent } from 'react';
 import toast from 'react-hot-toast';
 import { FaUndo, FaRedo } from 'react-icons/fa';
 import ColorPicker from '../color_picker/ColorPicker';
@@ -10,9 +10,9 @@ const SignatureCanvas = () => {
   const [strokeColor, setStrokeColor] = useState<string>('#000000');
   const [strokeWidth, setStrokeWidth] = useState<number>(4);
   const [backgroundColor, setBackgroundColor] = useState<string>('#ffffff');
-  const [error, setError] = useState<string>('');
   const [undoHistory, setUndoHistory] = useState<{ dataURL: string }[]>([]);
   const [redoHistory, setRedoHistory] = useState<{ dataURL: string }[]>([]);
+  const [brushType, setBrushType] = useState<string>('brush');
 
   useEffect(() => {
     const resizeCanvas = () => {
@@ -28,17 +28,22 @@ const SignatureCanvas = () => {
     };
   }, []);
 
-  const startDrawing = (e: MouseEvent<HTMLCanvasElement>) => {
+  const startDrawing = (e: React.MouseEvent<HTMLCanvasElement, MouseEvent> | React.TouchEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     setIsDrawing(true);
     if (!ctx) return;
-    ctx.beginPath();
-    ctx.moveTo(e.clientX - canvas.offsetLeft, e.clientY - canvas.offsetTop);
+    if ('touches' in e) {
+      const touch = e.touches[0];
+      ctx.beginPath();
+      ctx.moveTo(touch.clientX - canvas.offsetLeft, touch.clientY - canvas.offsetTop);
+    } else {
+      ctx.beginPath();
+      ctx.moveTo(e.clientX - canvas.offsetLeft, e.clientY - canvas.offsetTop);
+    }
     ctx.strokeStyle = strokeColor;
     ctx.lineWidth = strokeWidth;
-    setError('');
   };
 
   const endDrawing = () => {
@@ -50,14 +55,49 @@ const SignatureCanvas = () => {
     setRedoHistory([]);
   };
 
-  const draw = (e: MouseEvent<HTMLCanvasElement>) => {
+  const draw = (e: React.MouseEvent<HTMLCanvasElement, MouseEvent> | React.TouchEvent<HTMLCanvasElement>) => {
     if (!isDrawing) return;
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    ctx.lineTo(e.clientX - canvas.offsetLeft, e.clientY - canvas.offsetTop);
-    ctx.stroke();
+    if ('touches' in e) {
+      const touch = e.touches[0];
+      if (brushType === 'spray') {
+        spray(ctx, touch.clientX - canvas.offsetLeft, touch.clientY - canvas.offsetTop);
+      } else if (brushType === 'dotted') {
+        dotted(ctx, touch.clientX - canvas.offsetLeft, touch.clientY - canvas.offsetTop);
+      } else {
+        ctx.lineTo(touch.clientX - canvas.offsetLeft, touch.clientY - canvas.offsetTop);
+        ctx.stroke();
+      }
+    } else {
+      if (brushType === 'spray') {
+        spray(ctx, e.clientX - canvas.offsetLeft, e.clientY - canvas.offsetTop);
+      } else if (brushType === 'dotted') {
+        dotted(ctx, e.clientX - canvas.offsetLeft, e.clientY - canvas.offsetTop);
+      } else {
+        ctx.lineTo(e.clientX - canvas.offsetLeft, e.clientY - canvas.offsetTop);
+        ctx.stroke();
+      }
+    }
+  };
+  const spray = (ctx: CanvasRenderingContext2D, x: number, y: number) => {
+    const density = 50; // Change this to adjust the density of spray
+    ctx.fillStyle = strokeColor;
+    for (let i = 0; i < density; i++) {
+      const offsetX = Math.random() * 20 - 10;
+      const offsetY = Math.random() * 20 - 10;
+      ctx.fillRect(x + offsetX, y + offsetY, 1, 1);
+    }
+  };
+
+  const dotted = (ctx: CanvasRenderingContext2D, x: number, y: number) => {
+    ctx.beginPath();
+    ctx.arc(x, y, strokeWidth / 2, 0, Math.PI * 2);
+    ctx.fillStyle = strokeColor;
+    ctx.fill();
+    ctx.closePath();
   };
 
   const undo = () => {
@@ -90,7 +130,7 @@ const SignatureCanvas = () => {
       ctx.drawImage(img, 0, 0);
     };
   };
-  
+
   const clearCanvas = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -98,7 +138,6 @@ const SignatureCanvas = () => {
     if (!ctx) return;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     toast.success('Canvas cleared successfully!');
-    setError('');
   };
 
   const downloadSignature = () => {
@@ -132,6 +171,10 @@ const SignatureCanvas = () => {
     setBackgroundColor(e.target.value);
   };
 
+  const handleBrushTypeChange = (type: string) => {
+    setBrushType(type);
+  };
+
   return (
     <div className='flex justify-center pt-10 min-h-screen'>
       <div className='flex flex-col items-center'>
@@ -141,6 +184,9 @@ const SignatureCanvas = () => {
             onMouseDown={startDrawing}
             onMouseUp={endDrawing}
             onMouseMove={draw}
+            onTouchStart={startDrawing}
+            onTouchEnd={endDrawing}
+            onTouchMove={draw}
             style={{ backgroundColor }}
             className='shadow-lg'
           />
@@ -158,16 +204,28 @@ const SignatureCanvas = () => {
               value={strokeWidth}
               onChange={handleWidthChange}
             />
-            <button onClick={undo} className='bg-black py-[6px] px-[14px] font-bold text-white rounded-full hover:bg-[#1a1818] transition duration-300 ease-in-out'>
+            
+            <button onClick={undo} className='bg-black py-[6px] px-[14px] font-bold text-white rounded-full hover:bg-[#1a1818]'>
               <FaUndo />
             </button>
-            <button onClick={redo} className='bg-black py-[6px] px-[14px] font-bold text-white rounded-full hover:bg-[#1a1818] transition duration-300 ease-in-out'>
+            <button onClick={redo} className='bg-black py-[6px] px-[14px] font-bold text-white rounded-full hover:bg-[#1a1818]'>
               <FaRedo />
             </button>
           </div>
+          <div className='flex justify-between'>
+            <button onClick={() => handleBrushTypeChange('brush')} className={`bg-black py-[6px] px-[14px] font-bold text-white  ${brushType === 'brush' ? 'bg-gray-700' : 'hover:bg-gray-700'}`}>
+              Brush
+            </button>
+            <button onClick={() => handleBrushTypeChange('spray')} className={`bg-black py-[6px] px-[14px] font-bold text-white  ${brushType === 'spray' ? 'bg-gray-700' : 'hover:bg-gray-700'}`}>
+              Spray
+            </button>
+            <button onClick={() => handleBrushTypeChange('dotted')} className={`bg-black py-[6px] px-[14px] font-bold text-white  ${brushType === 'dotted' ? 'bg-gray-700' : 'hover:bg-gray-700'}`}>
+              Dotted
+            </button>
+          </div>
           <div className='flex gap-6'>
-            <button onClick={clearCanvas} className='bg-[#f14343] py-2 px-4 font-semibold text-white rounded hover:bg-[#ee5f5f] transition duration-300 ease-in-out'>Clear Canvas</button>
-            <button onClick={downloadSignature} className='bg-[#475cfa] py-2 px-4 font-semibold text-white rounded hover:bg-[#5a9cdf] transition duration-300 ease-in-out'>Download Canvas</button>
+            <button onClick={clearCanvas} className='bg-[#f14343] py-2 px-4 font-semibold text-white hover:bg-[#ee5f5f] shadow-md'>Clear Canvas</button>
+            <button onClick={downloadSignature} className='bg-[#475cfa] py-2 px-4 font-semibold text-white hover:bg-[#5a9cdf] shadow-md'>Download Canvas</button>
           </div>
         </div>
       </div>
