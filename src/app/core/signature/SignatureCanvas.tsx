@@ -1,7 +1,7 @@
 "use client"
 import React, { useState, useRef, useEffect, ChangeEvent } from 'react';
 import toast from 'react-hot-toast';
-import { FaUndo, FaRedo } from 'react-icons/fa';
+import { FaUndo, FaRedo, FaSprayCan, FaCircle, FaPaintBrush } from 'react-icons/fa';
 import ColorPicker from '../color_picker/ColorPicker';
 
 const SignatureCanvas = () => {
@@ -29,6 +29,7 @@ const SignatureCanvas = () => {
   }, []);
 
   const startDrawing = (e: React.MouseEvent<HTMLCanvasElement, MouseEvent> | React.TouchEvent<HTMLCanvasElement>) => {
+    e.preventDefault(); // Prevent default behavior of touch events
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
@@ -56,6 +57,7 @@ const SignatureCanvas = () => {
   };
 
   const draw = (e: React.MouseEvent<HTMLCanvasElement, MouseEvent> | React.TouchEvent<HTMLCanvasElement>) => {
+    e.preventDefault(); // Prevent default behavior of touch events
     if (!isDrawing) return;
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -82,6 +84,7 @@ const SignatureCanvas = () => {
       }
     }
   };
+
   const spray = (ctx: CanvasRenderingContext2D, x: number, y: number) => {
     const density = 50; // Change this to adjust the density of spray
     ctx.fillStyle = strokeColor;
@@ -204,7 +207,16 @@ const SignatureCanvas = () => {
               value={strokeWidth}
               onChange={handleWidthChange}
             />
-            
+            <button onClick={() => handleBrushTypeChange('brush')} className={`bg-black py-[6px] px-[14px] font-bold text-white rounded-full ${brushType === 'brush' ? 'bg-gray-700' : 'hover:bg-gray-700'}`}>
+              <FaPaintBrush />
+            </button>
+            <button onClick={() => handleBrushTypeChange('spray')} className={`bg-black py-[6px] px-[14px] font-bold text-white rounded-full ${brushType === 'spray' ? 'bg-gray-700' : 'hover:bg-gray-700'}`}>
+              <FaSprayCan />
+            </button>
+            <button onClick={() => handleBrushTypeChange('dotted')} className={`bg-black py-[6px] px-[14px] font-bold text-white rounded-full ${brushType === 'dotted' ? 'bg-gray-700' : 'hover:bg-gray-700'}`}>
+              <FaCircle />
+            </button>
+
             <button onClick={undo} className='bg-black py-[6px] px-[14px] font-bold text-white rounded-full hover:bg-[#1a1818]'>
               <FaUndo />
             </button>
@@ -213,7 +225,7 @@ const SignatureCanvas = () => {
             </button>
           </div>
           <div className='flex justify-between'>
-            <button onClick={() => handleBrushTypeChange('brush')} className={`bg-black py-[6px] px-[14px] font-bold text-white  ${brushType === 'brush' ? 'bg-gray-700' : 'hover:bg-gray-700'}`}>
+            {/* <button onClick={() => handleBrushTypeChange('brush')} className={`bg-black py-[6px] px-[14px] font-bold text-white  ${brushType === 'brush' ? 'bg-gray-700' : 'hover:bg-gray-700'}`}>
               Brush
             </button>
             <button onClick={() => handleBrushTypeChange('spray')} className={`bg-black py-[6px] px-[14px] font-bold text-white  ${brushType === 'spray' ? 'bg-gray-700' : 'hover:bg-gray-700'}`}>
@@ -221,9 +233,9 @@ const SignatureCanvas = () => {
             </button>
             <button onClick={() => handleBrushTypeChange('dotted')} className={`bg-black py-[6px] px-[14px] font-bold text-white  ${brushType === 'dotted' ? 'bg-gray-700' : 'hover:bg-gray-700'}`}>
               Dotted
-            </button>
+            </button> */}
           </div>
-          <div className='flex gap-6'>
+          <div className='flex gap-32'>
             <button onClick={clearCanvas} className='bg-[#f14343] py-2 px-4 font-semibold text-white hover:bg-[#ee5f5f] shadow-md'>Clear Canvas</button>
             <button onClick={downloadSignature} className='bg-[#475cfa] py-2 px-4 font-semibold text-white hover:bg-[#5a9cdf] shadow-md'>Download Canvas</button>
           </div>
