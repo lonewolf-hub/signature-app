@@ -1,8 +1,10 @@
 "use client"
 import React, { useState, useRef, useEffect, ChangeEvent } from 'react';
 import toast from 'react-hot-toast';
-import { FaUndo, FaRedo, FaSprayCan, FaCircle, FaPaintBrush } from 'react-icons/fa';
+import { FaUndo, FaRedo, FaSprayCan, FaCircle, FaPaintBrush, FaSquare, FaShapes, FaRing } from 'react-icons/fa';
 import ColorPicker from '../color_picker/ColorPicker';
+
+type SelectedShape = 'brush' | 'spray' | 'dotted' | 'circle' | 'square' | 'rectangle';
 
 const SignatureCanvas = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -12,7 +14,7 @@ const SignatureCanvas = () => {
   const [backgroundColor, setBackgroundColor] = useState<string>('#ffffff');
   const [undoHistory, setUndoHistory] = useState<{ dataURL: string }[]>([]);
   const [redoHistory, setRedoHistory] = useState<{ dataURL: string }[]>([]);
-  const [brushType, setBrushType] = useState<string>('brush');
+  const [selectedShape, setSelectedShape] = useState<SelectedShape>('brush');
 
   useEffect(() => {
     const resizeCanvas = () => {
@@ -65,42 +67,52 @@ const SignatureCanvas = () => {
     if (!ctx) return;
     if ('touches' in e) {
       const touch = e.touches[0];
-      if (brushType === 'spray') {
-        spray(ctx, touch.clientX - canvas.offsetLeft, touch.clientY - canvas.offsetTop);
-      } else if (brushType === 'dotted') {
-        dotted(ctx, touch.clientX - canvas.offsetLeft, touch.clientY - canvas.offsetTop);
-      } else {
-        ctx.lineTo(touch.clientX - canvas.offsetLeft, touch.clientY - canvas.offsetTop);
-        ctx.stroke();
+      switch (selectedShape) {
+        case 'circle':
+          drawCircle(ctx, touch.clientX - canvas.offsetLeft, touch.clientY - canvas.offsetTop);
+          break;
+        case 'square':
+          drawSquare(ctx, touch.clientX - canvas.offsetLeft, touch.clientY - canvas.offsetTop);
+          break;
+        case 'rectangle':
+          drawRectangle(ctx, touch.clientX - canvas.offsetLeft, touch.clientY - canvas.offsetTop);
+          break;
+        default:
+          ctx.lineTo(touch.clientX - canvas.offsetLeft, touch.clientY - canvas.offsetTop);
+          ctx.stroke();
+          break;
       }
     } else {
-      if (brushType === 'spray') {
-        spray(ctx, e.clientX - canvas.offsetLeft, e.clientY - canvas.offsetTop);
-      } else if (brushType === 'dotted') {
-        dotted(ctx, e.clientX - canvas.offsetLeft, e.clientY - canvas.offsetTop);
-      } else {
-        ctx.lineTo(e.clientX - canvas.offsetLeft, e.clientY - canvas.offsetTop);
-        ctx.stroke();
+      switch (selectedShape) {
+        case 'circle':
+          drawCircle(ctx, e.clientX - canvas.offsetLeft, e.clientY - canvas.offsetTop);
+          break;
+        case 'square':
+          drawSquare(ctx, e.clientX - canvas.offsetLeft, e.clientY - canvas.offsetTop);
+          break;
+        case 'rectangle':
+          drawRectangle(ctx, e.clientX - canvas.offsetLeft, e.clientY - canvas.offsetTop);
+          break;
+        default:
+          ctx.lineTo(e.clientX - canvas.offsetLeft, e.clientY - canvas.offsetTop);
+          ctx.stroke();
+          break;
       }
     }
   };
 
-  const spray = (ctx: CanvasRenderingContext2D, x: number, y: number) => {
-    const density = 50; // Change this to adjust the density of spray
-    ctx.fillStyle = strokeColor;
-    for (let i = 0; i < density; i++) {
-      const offsetX = Math.random() * 20 - 10;
-      const offsetY = Math.random() * 20 - 10;
-      ctx.fillRect(x + offsetX, y + offsetY, 1, 1);
-    }
+  const drawCircle = (ctx: CanvasRenderingContext2D, x: number, y: number) => {
+    ctx.beginPath();
+    ctx.arc(x, y, 50, 0, 2 * Math.PI);
+    ctx.stroke();
   };
 
-  const dotted = (ctx: CanvasRenderingContext2D, x: number, y: number) => {
-    ctx.beginPath();
-    ctx.arc(x, y, strokeWidth / 2, 0, Math.PI * 2);
-    ctx.fillStyle = strokeColor;
-    ctx.fill();
-    ctx.closePath();
+  const drawSquare = (ctx: CanvasRenderingContext2D, x: number, y: number) => {
+    ctx.strokeRect(x - 50, y - 50, 100, 100);
+  };
+
+  const drawRectangle = (ctx: CanvasRenderingContext2D, x: number, y: number) => {
+    ctx.strokeRect(x - 75, y - 50, 150, 100);
   };
 
   const undo = () => {
@@ -170,33 +182,28 @@ const SignatureCanvas = () => {
     setStrokeWidth(parseInt(e.target.value));
   };
 
-  const handleBackgroundColorChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setBackgroundColor(e.target.value);
-  };
-
-  const handleBrushTypeChange = (type: string) => {
-    setBrushType(type);
+  const handleShapeChange = (shape: SelectedShape) => {
+    setSelectedShape(shape);
   };
 
   return (
     <div className='flex justify-center pt-10 min-h-screen'>
       <div className='flex flex-col items-center'>
         <div className=''>
-        <canvas
-  ref={canvasRef}
-  onMouseDown={startDrawing}
-  onMouseUp={endDrawing}
-  onMouseMove={draw}
-  onTouchStart={startDrawing}
-  onTouchEnd={endDrawing}
-  onTouchMove={draw}
-  style={{ backgroundColor, touchAction: 'none' }} // Add touchAction property
-  className='shadow-lg'
-/>
-
+          <canvas
+            ref={canvasRef}
+            onMouseDown={startDrawing}
+            onMouseUp={endDrawing}
+            onMouseMove={draw}
+            onTouchStart={startDrawing}
+            onTouchEnd={endDrawing}
+            onTouchMove={draw}
+            style={{ backgroundColor, touchAction: 'none' }} // Add touchAction property
+            className='shadow-lg'
+          />
         </div>
         <div className='flex flex-col gap-4 mt-5'>
-          <div className='flex justify-between '>
+          <div className='flex justify-between'>
             <ColorPicker
               color={strokeColor}
               onChange={handleColorChange}
@@ -208,17 +215,24 @@ const SignatureCanvas = () => {
               value={strokeWidth}
               onChange={handleWidthChange}
             />
-           <button onClick={() => handleBrushTypeChange('brush')} className={`hidden sm:inline-block bg-black py-[6px] px-[14px] font-bold text-white rounded-full ${brushType === 'brush' ? 'bg-gray-700' : 'hover:bg-gray-700'}`}>
-  <FaPaintBrush />
-</button>
-
-            <button onClick={() => handleBrushTypeChange('spray')} className={`hidden sm:inline-block bg-black py-[6px] px-[14px] font-bold text-white rounded-full ${brushType === 'spray' ? 'bg-gray-700' : 'hover:bg-gray-700'}`}>
+            <button onClick={() => handleShapeChange('brush')} className={`hidden md:inline-block bg-black py-[6px] px-[14px] font-bold text-white rounded-full ${selectedShape === 'brush' ? 'bg-gray-700' : 'hover:bg-gray-700'}`}>
+              <FaPaintBrush />
+            </button>
+            <button onClick={() => handleShapeChange('spray')} className={`hidden md:inline-block bg-black py-[6px] px-[14px] font-bold text-white rounded-full ${selectedShape === 'spray' ? 'bg-gray-700' : 'hover:bg-gray-700'}`}>
               <FaSprayCan />
             </button>
-            <button onClick={() => handleBrushTypeChange('dotted')} className={`hidden sm:inline-block bg-black py-[6px] px-[14px] font-bold text-white rounded-full ${brushType === 'dotted' ? 'bg-gray-700' : 'hover:bg-gray-700'}`}>
+            <button onClick={() => handleShapeChange('dotted')} className={`hidden md:inline-block bg-black py-[6px] px-[14px] font-bold text-white rounded-full ${selectedShape === 'dotted' ? 'bg-gray-700' : 'hover:bg-gray-700'}`}>
               <FaCircle />
             </button>
-
+            <button onClick={() => handleShapeChange('circle')} className={`hidden md:inline-block bg-black py-[6px] px-[14px] font-bold text-white rounded-full ${selectedShape === 'circle' ? 'bg-gray-700' : 'hover:bg-gray-700'}`}>
+              <FaRing />
+            </button>
+            <button onClick={() => handleShapeChange('square')} className={`hidden md:inline-block bg-black py-[6px] px-[14px] font-bold text-white rounded-full ${selectedShape === 'square' ? 'bg-gray-700' : 'hover:bg-gray-700'}`}>
+              <FaSquare />
+            </button>
+            <button onClick={() => handleShapeChange('rectangle')} className={`hidden md:inline-block bg-black py-[6px] px-[14px] font-bold text-white rounded-full ${selectedShape === 'rectangle' ? 'bg-gray-700' : 'hover:bg-gray-700'}`}>
+              <FaShapes />
+            </button>
             <button onClick={undo} className='bg-black py-[6px] px-[14px] font-bold text-white rounded-full hover:bg-[#1a1818]'>
               <FaUndo />
             </button>
@@ -227,18 +241,26 @@ const SignatureCanvas = () => {
             </button>
           </div>
           <div className='flex justify-between h-11 md:hidden'>
-          <button onClick={() => handleBrushTypeChange('brush')} className={` bg-black py-[6px] px-[14px] font-bold text-white rounded-full ${brushType === 'brush' ? 'bg-gray-700' : 'hover:bg-gray-700'}`}>
-  <FaPaintBrush />
-</button>
-
-            <button onClick={() => handleBrushTypeChange('spray')} className={` bg-black py-[6px] px-[14px] font-bold text-white rounded-full ${brushType === 'spray' ? 'bg-gray-700' : 'hover:bg-gray-700'}`}>
+            <button onClick={() => handleShapeChange('brush')} className={`bg-black py-[6px] px-[14px] font-bold text-white rounded-full ${selectedShape === 'brush' ? 'bg-gray-700' : 'hover:bg-gray-700'}`}>
+              <FaPaintBrush />
+            </button>
+            <button onClick={() => handleShapeChange('spray')} className={`bg-black py-[6px] px-[14px] font-bold text-white rounded-full ${selectedShape === 'spray' ? 'bg-gray-700' : 'hover:bg-gray-700'}`}>
               <FaSprayCan />
             </button>
-            <button onClick={() => handleBrushTypeChange('dotted')} className={` bg-black py-[6px] px-[14px] font-bold text-white rounded-full ${brushType === 'dotted' ? 'bg-gray-700' : 'hover:bg-gray-700'}`}>
+            <button onClick={() => handleShapeChange('dotted')} className={`bg-black py-[6px] px-[14px] font-bold text-white rounded-full ${selectedShape === 'dotted' ? 'bg-gray-700' : 'hover:bg-gray-700'}`}>
               <FaCircle />
             </button>
+            <button onClick={() => handleShapeChange('circle')} className={`bg-black py-[6px] px-[14px] font-bold text-white rounded-full ${selectedShape === 'circle' ? 'bg-gray-700' : 'hover:bg-gray-700'}`}>
+              <FaRing/>
+            </button>
+            <button onClick={() => handleShapeChange('square')} className={`bg-black py-[6px] px-[14px] font-bold text-white rounded-full ${selectedShape === 'square' ? 'bg-gray-700' : 'hover:bg-gray-700'}`}>
+              <FaSquare />
+            </button>
+            <button onClick={() => handleShapeChange('rectangle')} className={`bg-black py-[6px] px-[14px] font-bold text-white rounded-full ${selectedShape === 'rectangle' ? 'bg-gray-700' : 'hover:bg-gray-700'}`}>
+              <FaShapes />
+            </button>
           </div>
-          <div className='flex md:gap-32 gap-12'>
+          <div className='flex md:gap-80 gap-12'>
             <button onClick={clearCanvas} className='bg-[#f14343] py-2 px-4 font-semibold text-white hover:bg-[#ee5f5f] shadow-md'>Clear Canvas</button>
             <button onClick={downloadSignature} className='bg-[#475cfa] py-2 px-4 font-semibold text-white hover:bg-[#5a9cdf] shadow-md'>Download Canvas</button>
           </div>
